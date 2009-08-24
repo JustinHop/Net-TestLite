@@ -1,0 +1,6 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+t/Net-TestLite.t
+lib/Net/TestLite.pm
