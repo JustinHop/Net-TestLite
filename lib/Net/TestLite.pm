@@ -6,6 +6,7 @@ use warnings;
 
 use Net::DNS::Check;
 use Net::DNS::Check::Config;
+use Data::Dumper;
 use Socket;
 
 require Exporter;
@@ -19,85 +20,131 @@ our @ISA = qw(Exporter);
 # This allows declaration	use Net::TestLite ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
+our %EXPORT_TAGS = ( 'all' => [ qw( ) ]);
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-our @EXPORT = qw(
-	
-);
+our @EXPORT = qw( );
 
 our $VERSION = '0.01';
 
+#
+#   Local Module Variables
+#       Probably the wrong way to do this but w/e
+#
+my @LOCAL_NS = ( "ns1.umusic.com", "ns2.umusic.com", "ns5.umusic.com" );
+my $debug = 1;
 
 # Preloaded methods go here.
 
 # ACCESSABLE SUBS
 sub new {
+    #warn "	--sub new" if $debug; 
     my $package = shift;
-    return bless({}, $package);
-}	# ----------  end of subroutine new  ----------
+    return bless( {}, $package );
+}    # ----------  end of subroutine new  ----------
 
-
-sub auth {
-    my $self = shift;
+sub umg_ns {
+    #warn "	--sub umg_ns" if $debug; 
+    chomp;
+    my $self  = shift;
+    my $query = shift;
+    return unless is_url($query);
     my $res = {};
 
-    foreach my $url (@_) {
-        #next unless is_url($url);
-        $res->{$url}-
-
-}   # ----------  end of subroutine auth  ----------
-
-sub echo {
-    my $self = shift;
-    if (@_) {
-        return dolc( join("",@_) );
-    } else {
-        return;
+    foreach my $ns (@LOCAL_NS) {
+        #warn "\$ns = $ns";
+        my $dig = dig( $query, $ns );
+        $res->{$ns} = $dig->{'answer'}[0]->{'value'};
     }
-}	# ----------  end of subroutine echo  ----------
+
+    return $res;
+}    # ----------  end of subroutine umg_ns  ----------
+
+sub auth_string {
+    #warn "	--sub auth_string" if $debug;
+    chomp;
+    my $self  = shift;
+    my $query = shift;
+    return unless is_url($query);
+    my $res = "";
+
+    my $dig = dig($query);
+
+    foreach ( @{ $dig->{'authority'} } ) {
+        my $sep = "";
+        $sep = " " if ( $res !~ /^$/ );
+
+        $res .= $sep . $_->{'value'};
+    }
+    return $res;
+}    # ----------  end of subroutine auth_string  ----------
+
+sub auth {
+    #warn "	--sub auth" if $debug;
+    chomp;
+    my $self = shift;
+    my $res  = {};
+
+    foreach (@_) {
+        my $url = $_;
+
+        #next unless is_url($url);
+        $res->{$url} = dig($url);
+    }
+
+    return $res;
+}    # ----------  end of subroutine auth  ----------
 
 #   INTERNAL SUBS
 
-sub dolc {
-    my $query = shift;
-    $query = lc $query; 
-	return $query;
-}	# ----------  end of subroutine dolc  ----------
-
-
 sub is_url {
-	my	( $par1 )	= @_;
+    #warn "	--sub auth" if $debug;
+    #warn "is_url is a stub";
+    my ($par1) = @_;
+
     #
     #   This will verify urls
     #
-	return ;
-}	# ----------  end of subroutine is_url  ----------
+    return 1;
+}    # ----------  end of subroutine is_url  ----------
 
-sub get_authority {
-	my	( $host, $dns )	= @_;
-    my  $res = {};  # responce
+sub dig {
+    #warn "	--sub dig" if $debug;
+    my ( $host, $dns ) = @_;
+    my $res = {};    # responce
 
-    $dns = "192.5.6.30" unless $dns; # default to a.root-servers.net if no ns given
+    $dns = "192.5.6.30"
+      unless $dns;    # default to a.root-servers.net if no ns given
 
+    my $dig_command = ' dig ' . $host . ' @' . $dns . " |";    # pipe command
 
-    my	$dig_command = " dig $host \@$dns |";		# pipe command
+    open my $dig, $dig_command
+      or die "$0 : failed to open  pipe '$dig_command' : $!\n";
 
-    open  my $dig, $dig_command
-    or die  "$0 : failed to open  pipe '$dig_command' : $!\n";
-
-    while(<$dig>){
+    my $section = "";
+    while (<$dig>) {
         $res->{'text'} .= $_;
+        if (/;; (\w+) SECTION:/) {
+            $section = lc $1;
+        }
+        if (/(\S+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\S+)/) {
+            push(
+                @{ $res->{$section} },
+                {
+                    record => $1,
+                    ttl    => $2,
+                    in     => $4,
+                    value  => $5,
+                }
+            );
+        }
     }
 
-    close  $dig
-        or warn "$0 : failed to close pipe '$dig_command' : $!\n";
-
-	return ;
-}	# ----------  end of subroutine get_authority  ----------
+    close $dig
+      or warn "$0 : failed to close pipe '$dig_command' : $!\n";
+    return $res;
+}   # ----------  end of subroutine dig  ----------
 
 1;
 __END__

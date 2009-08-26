@@ -23,9 +23,16 @@ use lib './lib';
 use strict;
 use warnings;
 
+use Data::Dumper;
 use Net::TestLite;
 
 my $t = Net::TestLite->new();
 
 
-my $a = $t->
+while (<STDIN>){
+    chomp;
+    my $query = $_;
+    print  $query . "\n" ;#. " authority is " . $t->auth_string($_) . "\n";
+    my $u = $t->umg_ns($query);
+    print Dumper($u);
+}
