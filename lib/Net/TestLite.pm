@@ -4,6 +4,10 @@ use 5.010000;
 use strict;
 use warnings;
 
+use Net::DNS::Check;
+use Net::DNS::Check::Config;
+use Socket;
+
 require Exporter;
 
 our @ISA = qw(Exporter);
@@ -30,13 +34,78 @@ our $VERSION = '0.01';
 
 # Preloaded methods go here.
 
+# ACCESSABLE SUBS
+sub new {
+    my $package = shift;
+    return bless({}, $package);
+}	# ----------  end of subroutine new  ----------
+
+
+sub auth {
+    my $self = shift;
+    my $res = {};
+
+    foreach my $url (@_) {
+        #next unless is_url($url);
+        $res->{$url}-
+
+}   # ----------  end of subroutine auth  ----------
+
+sub echo {
+    my $self = shift;
+    if (@_) {
+        return dolc( join("",@_) );
+    } else {
+        return;
+    }
+}	# ----------  end of subroutine echo  ----------
+
+#   INTERNAL SUBS
+
+sub dolc {
+    my $query = shift;
+    $query = lc $query; 
+	return $query;
+}	# ----------  end of subroutine dolc  ----------
+
+
+sub is_url {
+	my	( $par1 )	= @_;
+    #
+    #   This will verify urls
+    #
+	return ;
+}	# ----------  end of subroutine is_url  ----------
+
+sub get_authority {
+	my	( $host, $dns )	= @_;
+    my  $res = {};  # responce
+
+    $dns = "192.5.6.30" unless $dns; # default to a.root-servers.net if no ns given
+
+
+    my	$dig_command = " dig $host \@$dns |";		# pipe command
+
+    open  my $dig, $dig_command
+    or die  "$0 : failed to open  pipe '$dig_command' : $!\n";
+
+    while(<$dig>){
+        $res->{'text'} .= $_;
+    }
+
+    close  $dig
+        or warn "$0 : failed to close pipe '$dig_command' : $!\n";
+
+	return ;
+}	# ----------  end of subroutine get_authority  ----------
+
 1;
 __END__
 # Below is stub documentation for your module. You'd better edit it!
 
 =head1 NAME
 
-Net::TestLite - Perl extension for blah blah blah
+Net::TestLite - Automate my network tests 
 
 =head1 SYNOPSIS
 
@@ -47,7 +116,7 @@ Net::TestLite - Perl extension for blah blah blah
 
 Stub documentation for Net::TestLite, created by h2xs. It looks like the
 author of the extension was negligent enough to leave the stub
-unedited.
+unedited....  or was he? 
 
 Blah blah blah.
 
