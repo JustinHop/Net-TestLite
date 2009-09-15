@@ -32,7 +32,13 @@ my $t = Net::TestLite->new();
 while (<STDIN>){
     chomp;
     my $query = $_;
-    print  $query . "\n" ;#. " authority is " . $t->auth_string($_) . "\n";
+    print  $query . " authority is " . $t->auth_string($_) . "\n";
     my $u = $t->umg_ns($query);
     print Dumper($u);
+    my $h = $t->http($query);
+    #print Dumper($h);
+    my $c = $t->http_cluster($query,'linux');
+    print Dumper($c);
+
+
 }
